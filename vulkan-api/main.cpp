@@ -17,6 +17,11 @@ int main()
 
 	GLFWwindow* window = glfwCreateWindow(800, 800, "Test window", nullptr, nullptr);
 
+	uint32_t extensionsCount = 0; //uint32 literalmente acorta const unisigned int, el cual es un typedef de vulkan api.
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionsCount, nullptr);
+
+	std::cout << "Number of Vulkan extensions: " << extensionsCount << std::endl;
+
 	//main loop
 
 	while (!glfwWindowShouldClose(window)) // el loop vive mientras la venta exista o no se cierre.
