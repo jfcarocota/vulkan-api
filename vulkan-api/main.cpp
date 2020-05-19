@@ -1,43 +1,48 @@
-#define GLFW_INCLUDE_VULKAN //con esta sentecia llamamos por dentro de glfw a vulkan api, debemos tenr vulkan api ligado.
-#include<GLFW/glfw3.h>//Esta libreria trae una sentencia para incluir vulkan
-//#include<vulkan/vulkan.h> //Esta seria la forma normal de incluir vulkan
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
-#define GLM_FORCERADIANS //Este define forzará las medidas de angulos en radianes, la sentencia if el nombre del define ya viene con la libreria que usará.
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE //lo mismo que el paso anterior pero para ajustar el depth
-#include<glm/glm.hpp> //agregamos nuestra libreria especial de matematicas para graphics library (gl)
-#include<glm/mat4x4.hpp>//agregamos matrices 4 para transformaciones.
+#include <iostream>
+#include <stdexcept>
+#include <vector>
 
-#include<iostream>
+#include "VulknaRenderer.h"
+
+GLFWwindow* window;
+
+VulknaRenderer vulkanRenderer;
+
+void InitWindow(std::string windowName = "Test", const int width = 800, const int height = 800)
+{
+	//init glfw
+	glfwInit();
+
+	//indicar que GLFW no use opengl para levantar Vulkan
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // desactiva el reescalado de la ventana de GLFW
+
+	window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr); //c_str convierte de std string a literalmente const char* myString
+}
 
 int main()
 {
-	glfwInit();//literalmente inicializa todo lo que tenga que ver con glfw incluyendo la llamada a vulkan api inicial.
+	InitWindow();
 
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	//Crear instancia de VulknaRenderer
 
-	GLFWwindow* window = glfwCreateWindow(800, 800, "Test window", nullptr, nullptr);
-
-	uint32_t extensionsCount = 0; //uint32 literalmente acorta const unisigned int, el cual es un typedef de vulkan api.
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionsCount, nullptr);
-
-	std::cout << "Number of Vulkan extensions: " << extensionsCount << std::endl;
-
-	glm::mat4 testMatrix(1.0f);
-	glm::mat4 testVector(1.0f);
-
-	auto testResult = testMatrix * testVector;
+	if (vulkanRenderer.init(window) == EXIT_FAILURE) // checar que no falló al crear la la instancia de VK
+	{
+		return EXIT_FAILURE;
+	}
 
 	//main loop
 
-	while (!glfwWindowShouldClose(window)) // el loop vive mientras la venta exista o no se cierre.
+	while (!glfwWindowShouldClose(window))
 	{
-		glfwPollEvents(); //trae todos los eventos de inputs mientrar este loop viva
+		glfwPollEvents();
 	}
 
 	glfwDestroyWindow(window);
-
 	glfwTerminate();
 
 	return 0;
 }
-
