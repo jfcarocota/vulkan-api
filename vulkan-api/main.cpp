@@ -22,6 +22,11 @@ int main()
 
 	std::cout << "Number of Vulkan extensions: " << extensionsCount << std::endl;
 
+	glm::mat4 testMatrix(1.0f);
+	glm::mat4 testVector(1.0f);
+
+	auto testResult = testMatrix * testVector;
+
 	//main loop
 
 	while (!glfwWindowShouldClose(window)) // el loop vive mientras la venta exista o no se cierre.
@@ -30,5 +35,9 @@ int main()
 	}
 
 	glfwDestroyWindow(window);
+
+	glfwTerminate();
+
+	return 0;
 }
 
