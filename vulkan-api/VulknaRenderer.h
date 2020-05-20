@@ -5,6 +5,9 @@
 #include <stdexcept>//sirve para cachar escepciones, util para debugear vulkan
 #include <vector>
 
+#define APPLICATION_NAME "Vulkan Test"
+#define ENGINE_NAME "Beagle Engine"
+
 class VulknaRenderer
 {
 	public:
@@ -14,9 +17,9 @@ class VulknaRenderer
 
 		~VulknaRenderer();
 	private:
-		GLFWwindow* window;
+		GLFWwindow* window{};
 
-		VkInstance instance;
+		VkInstance instance{};
 
 		void CreateIsntance();
 };
