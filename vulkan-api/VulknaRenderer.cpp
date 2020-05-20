@@ -5,8 +5,7 @@
 
 VulknaRenderer::VulknaRenderer()
 {
-	this->window = nullptr;
-	this->instance = nullptr;
+	
 }
 
 int VulknaRenderer::init(GLFWwindow* window)
@@ -59,7 +58,7 @@ void VulknaRenderer::CreateIsntance()
 	//Las almacenaremos en un vector que guardara otro apuntador con los datos de cada extension
 	std::vector<const char*> instanceExtensions = std::vector<const char*>();
 	//contador de extensiones, recordar uint32_t significa un entero const sin signo de 32 bits, propio de glfw
-	uint32_t glfwExtensionsCount = 0;
+	uint32_t glfwExtensionsCount{};
 
 	//creamos un apuntador que apunte a otro para almacenar el contenedor de nuestras extenciones
 	const char** glfwExtensions;
@@ -69,6 +68,12 @@ void VulknaRenderer::CreateIsntance()
 	for (size_t i = 0; i < glfwExtensionsCount; i++)
 	{
 		instanceExtensions.push_back(glfwExtensions[i]);
+	}
+
+	//Verificar que las extensiones de la isntancia de Vk son soportadas
+	if (!CheckInstanceExtensionsSupport(&instanceExtensions))
+	{
+		throw std::runtime_error("Vk instance doesn't support requiered extensiones!");
 	}
 
 	createinfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size()); //lo castea a const unsigned int
@@ -90,4 +95,33 @@ void VulknaRenderer::CreateIsntance()
 		}
 		throw std::runtime_error("Failed to create Vulkan Instance");
 	}
+}
+
+bool VulknaRenderer::CheckInstanceExtensionsSupport(std::vector<const char*>* checkExtensions)
+{
+	//Primero hay que calcular el nunmero de extensiones antes de poder enviar el tamaño del array con las referncias a las extensiones
+
+	uint32_t extensionesCount{};
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionesCount, nullptr);
+	std::vector<VkExtensionProperties> extensions(extensionesCount);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionesCount, extensions.data());
+
+	//Comparar si hay extensiones que no son soportadas
+	for(const auto  &checkExtension :  *checkExtensions)
+	{
+		bool hasExtension = false;
+		for (const auto& extension : extensions)
+		{
+			if (strcmp(checkExtension, extension.extensionName))
+			{
+				hasExtension = true;
+				break;
+			}
+		}
+		if (!hasExtension)
+		{
+			return false;
+		}
+	}
+	return true;
 }

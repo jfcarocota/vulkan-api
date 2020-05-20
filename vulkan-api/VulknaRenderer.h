@@ -22,5 +22,7 @@ class VulknaRenderer
 		VkInstance instance{};
 
 		void CreateIsntance();
+
+		bool CheckInstanceExtensionsSupport(std::vector<const char*>* checkExtensions);
 };
 
