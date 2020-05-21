@@ -145,6 +145,7 @@
     <ClCompile Include="VulknaRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Utilities.h" />
     <ClInclude Include="VulknaRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

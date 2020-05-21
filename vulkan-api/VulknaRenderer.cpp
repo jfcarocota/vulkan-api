@@ -15,6 +15,8 @@ int VulknaRenderer::init(GLFWwindow* window)
 	try
 	{
 		CreateIsntance();
+		GetPhysicalDevice();
+		CreateLogicalDevice();
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -23,6 +25,12 @@ int VulknaRenderer::init(GLFWwindow* window)
 	}
 
 	return 0;
+}
+
+void VulknaRenderer::CleanUp()
+{
+	vkDestroyDevice(mainDevice.logicalDevice, nullptr);
+	vkDestroyInstance(instance, nullptr);
 }
 
 VulknaRenderer::~VulknaRenderer()
@@ -97,6 +105,89 @@ void VulknaRenderer::CreateIsntance()
 	}
 }
 
+void VulknaRenderer::CreateLogicalDevice()
+{
+	//Regresa la familia de la cola para el dispositivo fisico seleccionado
+	QueueFamilyIndices indices = GetQueueFamilies(mainDevice.physicalDevice);
+
+	//Representa la cola que necesitamos crear y la información para crearla (solo se hará una cola por ahora)
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamilty;//Representa el indice de la familia seleccionada para crear la cola
+	queueCreateInfo.queueCount = 1;//El numero de cola que quiero crear
+	float priority = 1.0f;//Representa la prioridad de las colas, ya que podemos tener mas de 1, 1 = Alta, 0 = baja y valores intermedios.
+	queueCreateInfo.pQueuePriorities = &priority; //es un puntero, asi que necesita forzosamente una variable y su ref &
+
+	//Información para crear el dispositivo lógico (logicalDevice), algnas veces conocido simplemente como device, no confundir con physicalDevice
+	VkDeviceCreateInfo deviceCreateInfo{};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceCreateInfo.queueCreateInfoCount = 1; // numero de colas para crear la información
+	deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;//Lista de cola de información para crear las colas requeridas
+	deviceCreateInfo.enabledExtensionCount = 0;//número de extensiones habilitadas para dispositivo lógico
+	deviceCreateInfo.ppEnabledExtensionNames = nullptr;//Lista de extensiones habilitadas para el dispositivo lógico
+
+	//Caracteristicas que el dispositivo físico estará usando
+	VkPhysicalDeviceFeatures deviceFeatures{};
+	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
+	//Logical device = device
+	VkResult result = vkCreateDevice(mainDevice.physicalDevice, &deviceCreateInfo, nullptr, &mainDevice.logicalDevice);
+
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create Physical Device!");
+	}
+
+	//Las colas deben crearse a la par del dispositivo logico (logicalDevice o device)
+	vkGetDeviceQueue(mainDevice.logicalDevice, indices.graphicsFamilty, 0, &graphicsQueue);//recordar el index es 0 porque por el momento solo tenemos una queue
+}
+
+void VulknaRenderer::GetPhysicalDevice()
+{
+	//Enumera las instancias de Vk a las cuales puede acceder
+	uint32_t deviceCount{};
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+	
+	//Revisar si no encontro dispositivos, de ser asi, entonces la GPU no soporta vulkan, ya que es incapaz de cagar dispositivos
+	if (deviceCount == 0)
+	{
+		throw std::runtime_error("Can't find GPUs that support Vulkan Instance!");
+	}
+
+	//obtener la lista de dispositivos
+	std::vector<VkPhysicalDevice> deviceList(deviceCount);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, deviceList.data());
+	
+	//Por ahora solo tomará el primer dispositivo que encuentre
+	//mainDevice.physicalDevice = deviceList[0];
+
+	for (const auto& device : deviceList)
+	{
+		if (CheckDeviceSuitable(device))
+		{
+			mainDevice.physicalDevice = device;
+			break;
+		}
+	}
+}
+
+//Tenemos que verificar que el dispositivo que seleccionemes es adecuado a nuestra Instancia de Vulkan
+bool VulknaRenderer::CheckDeviceSuitable(VkPhysicalDevice device)
+{
+	/*
+	//Información sobre el dispositivo
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+	//Información sobre lo que ese dispositivo puede hacer, shaders, geometría, etc
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+	*/
+
+	QueueFamilyIndices indices = GetQueueFamilies(device);
+	return indices.IsValid();
+}
+
 bool VulknaRenderer::CheckInstanceExtensionsSupport(std::vector<const char*>* checkExtensions)
 {
 	//Primero hay que calcular el nunmero de extensiones antes de poder enviar el tamaño del array con las referncias a las extensiones
@@ -124,4 +215,33 @@ bool VulknaRenderer::CheckInstanceExtensionsSupport(std::vector<const char*>* ch
 		}
 	}
 	return true;
+}
+
+QueueFamilyIndices VulknaRenderer::GetQueueFamilies(VkPhysicalDevice device)
+{
+	//Queremos obtener la información sobre las propiedades de cada familia de Queues
+	QueueFamilyIndices indices;
+	uint32_t queueFamilyCount{};
+
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+	std::vector<VkQueueFamilyProperties> queueFamilyList(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilyList.data());
+
+	//Revisamos y almenos tiene un type requerido por la Queue
+	int i{};
+	for (const auto& queueFamily : queueFamilyList)
+	{
+		//indica el numero de familia de graficas encontradas
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.graphicsFamilty = i;
+		}
+		//Para de buscar si el indice es valido
+		if (indices.IsValid())
+		{
+			break;
+		}
+		i++;
+	}
+	return indices;
 }
