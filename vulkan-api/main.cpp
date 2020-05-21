@@ -1,4 +1,4 @@
-#define GLFW_INCLUDE_VULKAN
+#define GLFW_INCLUDE_VULKAN // ya forma parte de GLFW la instruccion de traer vulkan, por eso usamos esta lib de GL
 #include <GLFW/glfw3.h>
 
 #include <iostream>
